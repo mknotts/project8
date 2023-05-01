@@ -33,30 +33,60 @@ void RPC_idle(struct rpc_connection *rpc, int time){
     m.fxn = "idl";
     m.arg1 = time;
     m.arg2 = -1;
-    // send_packet(struct socket source, struct sockaddr target, int slen, char* payload, int payload_length);
     struct packet_info pi;
     for (int i = 0; i < RETRY_COUNT; i++){
         send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *) m, sizeof(message));
         pi = receive_packet_timeout(TIMEOUT_TIME);
-        if (strlen((char*)packet_info) != 0){
+        if (packet_info.recv_len != 0){
             return 0;
         }
     }
     perror("Idle request not received\n");
-    return 1;
+    return -1;
 }
 
 // gets the value of a key on the server store
 int RPC_get(struct rpc_connection *rpc, int key){
-
+    struct message m = malloc(sizeof(message));
+    m.fxn = "get";
+    m.arg1 = key;
+    m.arg2 = -1;
+    struct packet_info pi;
+    for (int i = 0; i < RETRY_COUNT; i++){
+        send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *) m, sizeof(message));
+        pi = receive_packet_timeout(TIMEOUT_TIME);
+        if (packet_info.recv_len != 0){
+            int ret = atoi(pi.buf);
+            return ret;
+        }
+    }
+    perror("Get request not received\n");
+    return -1;
 }
 
 // sets the value of a key on the server store
 int RPC_put(struct rpc_connection *rpc, int key, int value){
-
+    struct message m = malloc(sizeof(message));
+    m.fxn = "put";
+    m.arg1 = key;
+    m.arg2 = value;
+    struct packet_info pi;
+    for (int i = 0; i < RETRY_COUNT; i++){
+        send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *) m, sizeof(message));
+        pi = receive_packet_timeout(TIMEOUT_TIME);
+        if (packet_info.recv_len != 0){
+            int ret = atoi(pi.buf);
+            return ret;
+        }
+    }
+    perror("Put request not received\n");
+    return -1;
 }
 
 // closes the RPC connection to the server
 void RPC_close(struct rpc_connection *rpc){
-
+    close_socket(rcp->recv_socket);
+    free(rpc->recv_socket);
+    free(rpc->dst_addr);
+    free(rpc);
 }
