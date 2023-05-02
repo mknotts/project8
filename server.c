@@ -6,6 +6,12 @@
 #include <pthread.h>
 #include "rpc.h"
 #include "server_functions.h"
+#include <stdbool.h>
+#include <pthread.h>
+#include "udp.h"
+#include "server_functions.h"
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 struct client{
     int clientID;
@@ -14,12 +20,13 @@ struct client{
 };
 
 struct socket s;
+struct client clients[100];
 
 void * call_function(void * arg){
     struct packet_info pi = *((struct packet_info *) arg);
 	struct message * m = (struct message *) (pi.buf);
     char * ret = malloc(sizeof(int));
-
+    int res = 0;
     if (strcmp(m->fxn, "idl") == 0){
         idle(m->arg1);
         sprintf(ret, "%d", 0);
@@ -30,19 +37,42 @@ void * call_function(void * arg){
         int res = get(m->arg1);
         sprintf(ret, "%d", res);
     }
-    printf("line 33\n");
+    clients[m->clientID].lastRes = res;
     send_packet(s, pi.sock, sizeof(struct sockaddr_storage), ret, sizeof(int) + 1);
-    printf("line 35\n");
     void * r = malloc(sizeof(1));
     return r;
 }
-#include <stdbool.h>
-#include <pthread.h>
-#include "udp.h"
-#include "server_functions.h"
 
-#include <sys/socket.h>
-#include <arpa/inet.h>
+int main(){
+    s = init_socket(SERVER_PORT);
+    for (int i = 0; i < 100; i++){
+        clients[i].clientID = -1;
+    } 
+    while (1){
+        struct packet_info pi = receive_packet(s);
+        struct message * m = (struct message *) (pi.buf);
+        if (clients[m->clientID].clientID == -1){
+            clients[m->clientID].clientID = m->clientID;
+            clients[m->clientID].seqNum = 0;
+            clients[m->clientID].lastRes = -1;
+        } else {
+            if (clients[m->clientID].seqNum == m->seqNum){
+                // resent result or send ack
+                char * ret = malloc(sizeof(int));
+                sprintf(ret, "%d", clients[m->clientID].lastRes);
+                send_packet(s, pi.sock, sizeof(struct sockaddr_storage), ret, sizeof(int) + 1);                
+                break;
+            } else if (clients[m->clientID].seqNum > m->seqNum){
+                break;
+            } 
+        }
+        clients[m->clientID].seqNum++;
+        if (pi.recv_len != 0){
+            pthread_t * child_thread = malloc(sizeof(child_thread));
+            pthread_create(child_thread, NULL, call_function, &pi);
+        }
+    }
+}
 
 /**
 // Function to initialize the call table
@@ -234,15 +264,3 @@ struct rpc_connection RPC_init(int port, int client_id, char* ip_addr) {
 
 //char* RPC
 **/
-
-
-int main(){
-    s = init_socket(SERVER_PORT);
-    while (1){
-        struct packet_info pi = receive_packet(s);
-        if (pi.recv_len != 0){
-            pthread_t * child_thread = malloc(sizeof(child_thread));
-            pthread_create(child_thread, NULL, call_function, &pi);
-        }
-    }
-}

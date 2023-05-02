@@ -27,7 +27,7 @@ struct rpc_connection RPC_init(int src_port, int dst_port, char dst_addr[]){
     rpc->dst_addr = *((struct sockaddr *)(&dst));
     rpc->dst_len = addrlen;
     rpc->seq_number = 0;
-    rpc->client_id = rand();
+    rpc->client_id = rand() % 100;
     return *rpc;
 }
 
@@ -37,6 +37,8 @@ void RPC_idle(struct rpc_connection *rpc, int time){
     strcpy(m->fxn, "idl");
     m->arg1 = time;
     m->arg2 = -1;
+    m->clientID = rpc->client_id;
+    m->seqNum = rpc->seq_number++;
     struct packet_info pi;
     for (int i = 0; i < RETRY_COUNT; i++){
         send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *) m, sizeof(struct message));
@@ -55,6 +57,8 @@ int RPC_get(struct rpc_connection *rpc, int key){
     strcpy(m->fxn, "get");
     m->arg1 = key;
     m->arg2 = -1;
+    m->clientID = rpc->client_id;
+    m->seqNum = rpc->seq_number++;
     struct packet_info pi;
     for (int i = 0; i < RETRY_COUNT; i++){
         send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *) m, sizeof(struct message));
@@ -74,6 +78,8 @@ int RPC_put(struct rpc_connection *rpc, int key, int value){
     strcpy(m->fxn, "put");
     m->arg1 = key;
     m->arg2 = value;
+    m->clientID = rpc->client_id;
+    m->seqNum = rpc->seq_number++;
     struct packet_info pi;
     for (int i = 0; i < RETRY_COUNT; i++){
         send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *) m, sizeof(struct message));
