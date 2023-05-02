@@ -17,15 +17,15 @@ struct rpc_connection RPC_init(int src_port, int dst_port, char dst_addr[]){
     struct socket recv_socket = init_socket(src_port); 
 
     // populate socket address using
-    struct sockaddr_storage * dst = malloc(sizeof(struct sockaddr_storage)); // check if this is initialized correctly
-    socklen_t * addrlen = malloc(sizeof(socklen_t));
-    populate_sockaddr(AF_INET, dst_port, dst_addr, dst, addrlen);
+    struct sockaddr_storage dst; // check if this is initialized correctly
+    socklen_t addrlen;
+    populate_sockaddr(AF_INET, dst_port, dst_addr, &dst, &addrlen);
 
     // initialize and set rpc_connection arguments
     struct rpc_connection * rpc = malloc(sizeof(struct rpc_connection));
     rpc->recv_socket = recv_socket;
     rpc->dst_addr = *((struct sockaddr *)(&dst));
-    rpc->dst_len = *addrlen;
+    rpc->dst_len = addrlen;
     rpc->seq_number = 0;
     rpc->client_id = rand();
     return *rpc;
@@ -92,5 +92,5 @@ void RPC_close(struct rpc_connection *rpc){
     close_socket(rpc->recv_socket);
     //free(rpc->recv_socket);
     //free(rpc->dst_addr);
-    free(rpc);
+    //free(rpc);
 }
