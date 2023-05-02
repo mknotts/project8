@@ -26,18 +26,20 @@ void * call_function(void * arg){
     struct packet_info pi = *((struct packet_info *) arg);
 	struct message * m = (struct message *) (pi.buf);
     char * ret = malloc(sizeof(int));
-    int res = 0;
     if (strcmp(m->fxn, "idl") == 0){
         idle(m->arg1);
         sprintf(ret, "%d", 0);
+        clients[m->clientID].lastRes = 0;
     } else if (strcmp(m->fxn, "put") == 0){
         int res = put(m->arg1, m->arg2);
         sprintf(ret, "%d", res);
+        clients[m->clientID].lastRes = res;
     } else if (strcmp(m->fxn, "get") == 0){
         int res = get(m->arg1);
         sprintf(ret, "%d", res);
+        clients[m->clientID].lastRes = res;
     }
-    clients[m->clientID].lastRes = res;
+
     send_packet(s, pi.sock, sizeof(struct sockaddr_storage), ret, sizeof(int) + 1);
     void * r = malloc(sizeof(1));
     return r;
@@ -51,20 +53,29 @@ int main(){
     while (1){
         struct packet_info pi = receive_packet(s);
         struct message * m = (struct message *) (pi.buf);
+        printf("function: %s\n", m->fxn);
+        printf("i: %d\n", m->seqNum);
+        printf("last: %d\n", clients[m->clientID].seqNum);
         if (clients[m->clientID].clientID == -1){
             clients[m->clientID].clientID = m->clientID;
             clients[m->clientID].seqNum = 0;
             clients[m->clientID].lastRes = -1;
         } else {
-            if (clients[m->clientID].seqNum == m->seqNum){
-                // resent result or send ack
+            int i = m->seqNum;
+            int last = clients[m->clientID].seqNum;
+            if (last == i){
+                printf("incoming seqnum equal to server seqnum\n");
                 char * ret = malloc(sizeof(int));
                 sprintf(ret, "%d", clients[m->clientID].lastRes);
+                printf("last result: %d\n", clients[m->clientID].lastRes);
+                printf("ret: %s\n", ret);
                 send_packet(s, pi.sock, sizeof(struct sockaddr_storage), ret, sizeof(int) + 1);                
-                break;
-            } else if (clients[m->clientID].seqNum > m->seqNum){
-                break;
+                continue;
+            } else if (last > i){
+                printf("incoming seqnum less than server seqnum\n");
+                continue;
             } 
+            printf("incoming seqnum greater than server seqnum\n");
         }
         clients[m->clientID].seqNum++;
         if (pi.recv_len != 0){

@@ -1,4 +1,5 @@
 #include<unistd.h>
+#include <stdio.h>
 
 #include "server_functions.h"
 
@@ -9,6 +10,7 @@ void idle(int time){
 }
 
 int get(int key){
+    printf("getting index %d\n", key);
     if(key > NUMKEYS || key < 0){
         return -1;
     }
@@ -16,6 +18,7 @@ int get(int key){
 }
 
 int put(int key, int value){
+    printf("adding %d to index %d\n", value, key);
     if(key > NUMKEYS || key < 0){
         return -1;
     }
