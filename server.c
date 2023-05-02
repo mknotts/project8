@@ -53,9 +53,9 @@ int main(){
     while (1){
         struct packet_info pi = receive_packet(s);
         struct message * m = (struct message *) (pi.buf);
-        printf("function: %s\n", m->fxn);
-        printf("i: %d\n", m->seqNum);
-        printf("last: %d\n", clients[m->clientID].seqNum);
+        // printf("function: %s\n", m->fxn);
+        // printf("i: %d\n", m->seqNum);
+        // printf("last: %d\n", clients[m->clientID].seqNum);
         if (clients[m->clientID].clientID == -1){
             clients[m->clientID].clientID = m->clientID;
             clients[m->clientID].seqNum = 0;
@@ -67,8 +67,8 @@ int main(){
                 printf("incoming seqnum equal to server seqnum\n");
                 char * ret = malloc(sizeof(int));
                 sprintf(ret, "%d", clients[m->clientID].lastRes);
-                printf("last result: %d\n", clients[m->clientID].lastRes);
-                printf("ret: %s\n", ret);
+                // printf("last result: %d\n", clients[m->clientID].lastRes);
+                // printf("ret: %s\n", ret);
                 send_packet(s, pi.sock, sizeof(struct sockaddr_storage), ret, sizeof(int) + 1);                
                 continue;
             } else if (last > i){
@@ -81,6 +81,7 @@ int main(){
         if (pi.recv_len != 0){
             pthread_t * child_thread = malloc(sizeof(child_thread));
             pthread_create(child_thread, NULL, call_function, &pi);
+            pthread_join(*child_thread, NULL);
         }
     }
 }

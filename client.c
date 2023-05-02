@@ -38,7 +38,7 @@ void RPC_idle(struct rpc_connection *rpc, int time){
     m->arg1 = time;
     m->arg2 = -1;
     m->clientID = rpc->client_id;
-    m->seqNum = rpc->seq_number++;
+    m->seqNum = ++rpc->seq_number;
     struct packet_info pi;
     for (int i = 0; i < RETRY_COUNT; i++){
         send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *) m, sizeof(struct message));
@@ -58,7 +58,7 @@ int RPC_get(struct rpc_connection *rpc, int key){
     m->arg1 = key;
     m->arg2 = -1;
     m->clientID = rpc->client_id;
-    m->seqNum = rpc->seq_number++;
+    m->seqNum = ++rpc->seq_number;
     struct packet_info pi;
     for (int i = 0; i < RETRY_COUNT; i++){
         send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *) m, sizeof(struct message));
@@ -79,7 +79,7 @@ int RPC_put(struct rpc_connection *rpc, int key, int value){
     m->arg1 = key;
     m->arg2 = value;
     m->clientID = rpc->client_id;
-    m->seqNum = rpc->seq_number++;
+    m->seqNum = ++rpc->seq_number;
     struct packet_info pi;
     for (int i = 0; i < RETRY_COUNT; i++){
         send_packet(rpc->recv_socket, rpc->dst_addr, rpc->dst_len, (char *) m, sizeof(struct message));
