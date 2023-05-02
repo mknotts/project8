@@ -54,16 +54,49 @@ void handle_client_message(char* message, int message_len, struct sockaddr_in* c
     }
 }
 **/
+/**
+int listen_for_packets(int port) {
+    int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sockfd == -1) {
+        printf("Error creating socket\n");
+        exit(1);
+    }
 
+    struct sockaddr_in server_addr = {
+        .sin_family = AF_INET,
+        .sin_addr.s_addr = htonl(INADDR_ANY),
+        .sin_port = htons(port)
+    };
 
-#define MAX_PACKET_SIZE 1024
+    if (bind(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1) {
+        printf("Error binding to port %d\n", port);
+        exit(1);
+    }
 
-struct packet {
-    struct sockaddr_in sock;
-    char data[MAX_PACKET_SIZE];
-};
+    return sockfd;
+}
 
-struct rpc_connection {
+struct packet* get_next_packet(int sockfd) {
+    struct packet* packet = (struct packet*)malloc(sizeof(struct packet));
+    memset(packet, 0, sizeof(struct packet));
+
+    socklen_t socklen = sizeof(packet->sock);
+    int bytes_received = recvfrom(sockfd, packet->data, MAX_PACKET_SIZE, 0, (struct sockaddr*)&packet->sock, &socklen);
+    if (bytes_received == -1) {
+        printf("Error receiving packet\n");
+        exit(1);
+    }
+
+    return packet;
+}
+
+struct rpc_connection RPC_init(int port, int client_id, char* ip_addr) {
+    struct rpc_connection rpc;
+    rpc.port = port;
+    rpc.client_id = client_id;
+    rpc.ip_addr = ip_addr;
+    return rpc;
+} {
     int port;
     int client_id;
     char* ip_addr;
@@ -167,4 +200,5 @@ struct rpc_connection RPC_init(int port, int client_id, char* ip_addr) {
 }
 
 //char* RPC
+**/
 
