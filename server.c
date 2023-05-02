@@ -30,7 +30,9 @@ void * call_function(void * arg){
         int res = get(m->arg1);
         sprintf(ret, "%d", res);
     }
-    send_packet(s, pi.sock, pi.recv_len, ret, sizeof(int));
+    printf("line 33\n");
+    send_packet(s, pi.sock, sizeof(struct sockaddr_storage), ret, sizeof(int) + 1);
+    printf("line 35\n");
     void * r = malloc(sizeof(1));
     return r;
 }
