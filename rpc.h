@@ -12,7 +12,4 @@ struct message{
     int seqNum;
 };
 
-#define SERVER_PORT 8888
-
-
 #endif
